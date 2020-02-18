@@ -15,6 +15,7 @@
 #include <stb_image_write.h>
 #include <tiny_gltf.h>
 
+
 bool ViewerApplication::loadGltfFile(tinygltf::Model & model){
 
   tinygltf::TinyGLTF loader;
@@ -157,6 +158,10 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uModelViewMatrix");
   const auto normalMatrixLocation =
       glGetUniformLocation(glslProgram.glId(), "uNormalMatrix");
+  const auto lightDirectionLocation =
+      glGetUniformLocation(glslProgram.glId(), "uLightDirection");
+  const auto lightIntensityLocation =
+      glGetUniformLocation(glslProgram.glId(), "uLightIntensity");
 
   tinygltf::Model model;
   if(!loadGltfFile(model)) {
@@ -195,6 +200,10 @@ int ViewerApplication::run()
   std::vector<GLuint> vertexArrayObjects = createVertexArrayObjects(model, bufferObjects, meshIndexToVaoRange);
   //std::cout << vertexArrayObjects.size() << std::endl;
 
+  glm::vec3 lightDirection(1.f,1.f,1.f);
+  glm::vec3 lightIntensity(1.f,1.f,1.f); 
+
+
   // Setup OpenGL state for rendering
   glEnable(GL_DEPTH_TEST);
   glslProgram.use();
@@ -212,6 +221,20 @@ int ViewerApplication::run()
         [&](int nodeIdx, const glm::mat4 &parentMatrix) {
           tinygltf::Node node = model.nodes[nodeIdx];
           glm::mat4 modelMatrix = getLocalToWorldMatrix(node, parentMatrix);
+
+          if(lightIntensityLocation > 0) {
+            glUniform3f(lightIntensityLocation, lightIntensity[0], lightIntensity[1], lightIntensity[2]);
+          }
+
+          if(lightDirectionLocation > 0) {
+            const glm::vec3 normalizedLightDirectionViewSpace =
+                glm::normalize(glm::vec3(viewMatrix * glm::vec4(lightDirection, 0.)));
+            glUniform3f(lightDirectionLocation,
+                normalizedLightDirectionViewSpace[0], 
+                normalizedLightDirectionViewSpace[1], 
+                normalizedLightDirectionViewSpace[2]);
+          }
+
           if(node.mesh >= 0){
             const glm::mat4 modelViewMatrix = modelMatrix * viewMatrix;
             const glm::mat4 modelViewProjectionMatrix = projMatrix * modelViewMatrix;
@@ -318,6 +341,25 @@ int ViewerApplication::run()
           }
           cameraController->setCamera(currentCamera);
         }
+      }
+      if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+        float angleTheta = 0.;
+        float anglePhi = 0.;
+        float numberPI = 3.14;
+        if(ImGui::SliderFloat("Theta Angle", &angleTheta, 0, numberPI) ||
+          ImGui::SliderFloat("Phi Angle", &anglePhi, 0, 2. * numberPI)) {
+          const auto sinTheta = glm::sin(angleTheta);
+          const auto cosTheta = glm::cos(angleTheta);
+          const auto sinPhi = glm::sin(anglePhi);
+          const auto cosPhi = glm::cos(anglePhi);
+          lightDirection = glm::vec3(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi);
+        }
+        glm::vec3 color(1.f, 1.f, 1.f);
+        float intensityFactor = 1.f;
+        if(ImGui::ColorEdit3("Color",(float *)&color) ||
+          ImGui::InputFloat("Intensity Factor", &intensityFactor)) {
+            lightIntensity = color * intensityFactor;
+          }
       }
       ImGui::End();
     }
