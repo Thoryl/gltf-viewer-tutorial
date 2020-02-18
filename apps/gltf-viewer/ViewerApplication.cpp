@@ -203,6 +203,8 @@ int ViewerApplication::run()
   glm::vec3 lightDirection(1.f,1.f,1.f);
   glm::vec3 lightIntensity(1.f,1.f,1.f); 
 
+  bool lightFromCamera = false;
+
 
   // Setup OpenGL state for rendering
   glEnable(GL_DEPTH_TEST);
@@ -222,17 +224,21 @@ int ViewerApplication::run()
           tinygltf::Node node = model.nodes[nodeIdx];
           glm::mat4 modelMatrix = getLocalToWorldMatrix(node, parentMatrix);
 
-          if(lightIntensityLocation > 0) {
+          if(lightIntensityLocation >= 0) {
             glUniform3f(lightIntensityLocation, lightIntensity[0], lightIntensity[1], lightIntensity[2]);
           }
-
-          if(lightDirectionLocation > 0) {
-            const glm::vec3 normalizedLightDirectionViewSpace =
-                glm::normalize(glm::vec3(viewMatrix * glm::vec4(lightDirection, 0.)));
-            glUniform3f(lightDirectionLocation,
-                normalizedLightDirectionViewSpace[0], 
-                normalizedLightDirectionViewSpace[1], 
-                normalizedLightDirectionViewSpace[2]);
+          if(lightDirectionLocation >= 0) {
+            if(lightFromCamera) {
+              glUniform3f(lightDirectionLocation, 0, 0, 1);
+            }
+            else {
+              const glm::vec3 normalizedLightDirectionViewSpace =
+                  glm::normalize(glm::vec3(viewMatrix * glm::vec4(lightDirection, 0.)));
+              glUniform3f(lightDirectionLocation,
+                  normalizedLightDirectionViewSpace[0], 
+                  normalizedLightDirectionViewSpace[1], 
+                  normalizedLightDirectionViewSpace[2]);
+            }
           }
 
           if(node.mesh >= 0){
@@ -343,9 +349,9 @@ int ViewerApplication::run()
         }
       }
       if(ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-        float angleTheta = 0.;
-        float anglePhi = 0.;
-        float numberPI = 3.14;
+        static float angleTheta = 0.;
+        static float anglePhi = 0.;
+        static float numberPI = 3.14;
         if(ImGui::SliderFloat("Theta Angle", &angleTheta, 0, numberPI) ||
           ImGui::SliderFloat("Phi Angle", &anglePhi, 0, 2. * numberPI)) {
           const auto sinTheta = glm::sin(angleTheta);
@@ -354,12 +360,13 @@ int ViewerApplication::run()
           const auto cosPhi = glm::cos(anglePhi);
           lightDirection = glm::vec3(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi);
         }
-        glm::vec3 color(1.f, 1.f, 1.f);
-        float intensityFactor = 1.f;
+        static glm::vec3 color(1.f, 1.f, 1.f);
+        static float intensityFactor = 1.f;
         if(ImGui::ColorEdit3("Color",(float *)&color) ||
           ImGui::InputFloat("Intensity Factor", &intensityFactor)) {
             lightIntensity = color * intensityFactor;
-          }
+        }
+        ImGui::Checkbox("Light from camera", &lightFromCamera);
       }
       ImGui::End();
     }
