@@ -174,7 +174,7 @@ bool TrackballCameraController::update(float elapsedTime) {
   const auto depthAxis = m_camera.eye() - m_camera.center();
   const auto horizontalAxis = m_camera.left();
 
-  const auto verticalRotationMatrix = glm::rotate(mat4(1), verticalAngle, m_worldUpAxis);
+  const auto verticalRotationMatrix = glm::rotate(mat4(1), verticalAngle, horizontalAxis);
 
   const auto rotatedVerticalVector = vec3(verticalRotationMatrix * vec4(depthAxis, 0));
 
