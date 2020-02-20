@@ -138,8 +138,8 @@ std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf:
 }
 
 std::vector<GLuint> ViewerApplication::createTextureObjects(const tinygltf::Model &model) const {
-  std::vector<GLuint> texObjects(model.textures.size(), 0);
-  glGenTextures(model.textures.size(), texObjects.data());
+  std::vector<GLuint> texObjects(model.textures.size());
+  glGenTextures(model.textures.size(), &texObjects[0]);
   tinygltf::Sampler defaultSampler;
   defaultSampler.minFilter = GL_LINEAR;
   defaultSampler.magFilter = GL_LINEAR;
@@ -157,6 +157,7 @@ std::vector<GLuint> ViewerApplication::createTextureObjects(const tinygltf::Mode
             GL_RGBA, image.pixel_type, image.image.data());
     const auto &sampler =
       texture.sampler >= 0 ? model.samplers[texture.sampler] : defaultSampler;
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
       sampler.minFilter != -1 ? sampler.minFilter : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
@@ -164,6 +165,7 @@ std::vector<GLuint> ViewerApplication::createTextureObjects(const tinygltf::Mode
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sampler.wrapS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, sampler.wrapT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, sampler.wrapR);
+
     if (sampler.minFilter == GL_NEAREST_MIPMAP_NEAREST ||
         sampler.minFilter == GL_NEAREST_MIPMAP_LINEAR ||
         sampler.minFilter == GL_LINEAR_MIPMAP_NEAREST ||
@@ -201,7 +203,7 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uLightDirection");
   const auto lightIntensityLocation =
       glGetUniformLocation(glslProgram.glId(), "uLightIntensity");
-  const auto BaseColorTextureLocation =
+  const auto baseColorTextureLocation =
       glGetUniformLocation(glslProgram.glId(), "uBaseColorTexture");
 
   tinygltf::Model model;
@@ -264,6 +266,25 @@ int ViewerApplication::run()
   glEnable(GL_DEPTH_TEST);
   glslProgram.use();
 
+  const auto bindMaterial = [&](const auto materialIndex) {
+    if(materialIndex >= 0) {
+      const auto &material = model.materials[materialIndex];
+      const auto &pbrMetallicRoughness = material.pbrMetallicRoughness;
+      if(pbrMetallicRoughness.baseColorTexture.index >= 0) {
+        const auto &texture = model.textures[pbrMetallicRoughness.baseColorTexture.index];
+        glActiveTexture(GL_TEXTURE0);
+        assert(texture.source >= 0);
+        glBindTexture(GL_TEXTURE_2D, texObjects[texture.source]);
+        glUniform1i(baseColorTextureLocation, 0);
+      }
+      else {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, whiteTexture);
+        glUniform1i(baseColorTextureLocation, 0);
+      }
+    }
+  };
+
   // Lambda function to draw the scene
   const auto drawScene = [&](const Camera &camera) {
     glViewport(0, 0, m_nWindowWidth, m_nWindowHeight);
@@ -309,6 +330,7 @@ int ViewerApplication::run()
             for(size_t primIdx = 0; primIdx < mesh.primitives.size(); ++primIdx) {
               const auto vaoPrimitive = vertexArrayObjects[vaoRangeMesh.begin + primIdx];
               const auto &currentPrimitive = mesh.primitives[primIdx];
+              bindMaterial(currentPrimitive.material);
               glBindVertexArray(vaoPrimitive);
               if(currentPrimitive.indices >= 0) {
                 const auto &accessor = model.accessors[currentPrimitive.indices];
@@ -394,10 +416,10 @@ int ViewerApplication::run()
           const auto currentCamera = cameraController->getCamera();
           if (cameraControllerType == 0) {
             cameraController = std::make_unique<TrackballCameraController>(
-                m_GLFWHandle.window(), 0.5f * maxDistance);
+                m_GLFWHandle.window(), 3.f * maxDistance);
           } else {
             cameraController = std::make_unique<FirstPersonCameraController>(
-                m_GLFWHandle.window(), 0.5f * maxDistance);
+                m_GLFWHandle.window(), 30.f * maxDistance);
           }
           cameraController->setCamera(currentCamera);
         }
