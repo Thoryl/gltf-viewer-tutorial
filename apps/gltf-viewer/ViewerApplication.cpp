@@ -137,6 +137,45 @@ std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf:
     return vertexArrayObjects;
 }
 
+std::vector<GLuint> ViewerApplication::createTextureObjects(const tinygltf::Model &model) const {
+  std::vector<GLuint> texObjects(model.textures.size(), 0);
+  glGenTextures(model.textures.size(), texObjects.data());
+  tinygltf::Sampler defaultSampler;
+  defaultSampler.minFilter = GL_LINEAR;
+  defaultSampler.magFilter = GL_LINEAR;
+  defaultSampler.wrapS = GL_REPEAT;
+  defaultSampler.wrapT = GL_REPEAT;
+  defaultSampler.wrapR = GL_REPEAT;
+  for(int textIdx = 0; textIdx < model.textures.size(); ++textIdx) {
+    glBindTexture(GL_TEXTURE_2D, texObjects[textIdx]);
+
+    const auto &texture = model.textures[textIdx];
+    assert(texture.source >= 0);
+    const auto &image = model.images[texture.source];
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
+            GL_RGBA, image.pixel_type, image.image.data());
+    const auto &sampler =
+      texture.sampler >= 0 ? model.samplers[texture.sampler] : defaultSampler;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+      sampler.minFilter != -1 ? sampler.minFilter : GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+      sampler.magFilter != -1 ? sampler.magFilter : GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sampler.wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, sampler.wrapT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, sampler.wrapR);
+    if (sampler.minFilter == GL_NEAREST_MIPMAP_NEAREST ||
+        sampler.minFilter == GL_NEAREST_MIPMAP_LINEAR ||
+        sampler.minFilter == GL_LINEAR_MIPMAP_NEAREST ||
+        sampler.minFilter == GL_LINEAR_MIPMAP_LINEAR) {
+      glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+  return texObjects;
+}
+
 void keyCallback(
     GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -183,8 +222,6 @@ int ViewerApplication::run()
       glm::perspective(70.f, float(m_nWindowWidth) / m_nWindowHeight,
           0.001f * maxDistance, 1.5f * maxDistance);
 
-  // TODO Implement a new CameraController model and use it instead. Propose the
-  // choice from the GUI
   std::unique_ptr<CameraController> cameraController
     = std::make_unique<TrackballCameraController>(m_GLFWHandle.window(), 3.f * maxDistance);
   if (m_hasUserCamera) {
@@ -193,6 +230,21 @@ int ViewerApplication::run()
     cameraController->setCamera(
         Camera{eye, center, up});
   }
+
+  std::vector<GLuint> texObjects = createTextureObjects(model);
+  GLuint whiteTexture;
+  float white[] = {1., 1., 1., 1.};
+  glGenTextures(1, &whiteTexture);
+  glBindTexture(GL_TEXTURE_2D, whiteTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0,
+        GL_RGBA, GL_FLOAT, white);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   std::vector<GLuint> bufferObjects = createBufferObjects(model);
 
