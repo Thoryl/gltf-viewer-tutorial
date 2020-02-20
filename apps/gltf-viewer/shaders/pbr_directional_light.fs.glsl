@@ -7,6 +7,7 @@ uniform vec3 uLightDirection;
 uniform vec3 uLightIntensity;
 
 uniform sampler2D uBaseColorTexture;
+uniform vec4 uBaseColorFactor;
 
 out vec3 fColor;
 
@@ -40,8 +41,9 @@ void main()
   vec3 L = uLightDirection;
 
   vec4 baseColorFromTexture = SRGBtoLINEAR(texture(uBaseColorTexture, vTexCoords));
+  vec4 baseColor = baseColorFromTexture * uBaseColorFactor;
   float NdotL = clamp(dot(N, L), 0, 1);
-  vec3 diffuse = baseColorFromTexture.rgb * M_1_PI * NdotL;
+  vec3 diffuse = baseColor.rgb * M_1_PI * NdotL;
 
   fColor = LINEARtoSRGB(diffuse);
 }

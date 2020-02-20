@@ -205,6 +205,8 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uLightIntensity");
   const auto baseColorTextureLocation =
       glGetUniformLocation(glslProgram.glId(), "uBaseColorTexture");
+  const auto baseColorFactorLocation =
+      glGetUniformLocation(glslProgram.glId(), "uBaseColorFactor");
 
   tinygltf::Model model;
   if(!loadGltfFile(model)) {
@@ -276,11 +278,22 @@ int ViewerApplication::run()
         assert(texture.source >= 0);
         glBindTexture(GL_TEXTURE_2D, texObjects[texture.source]);
         glUniform1i(baseColorTextureLocation, 0);
+        glUniform4f(baseColorFactorLocation,
+          (float)pbrMetallicRoughness.baseColorFactor[0],
+          (float)pbrMetallicRoughness.baseColorFactor[1],
+          (float)pbrMetallicRoughness.baseColorFactor[2],
+          (float)pbrMetallicRoughness.baseColorFactor[3]);
+
       }
       else {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, whiteTexture);
         glUniform1i(baseColorTextureLocation, 0);
+        glUniform4f(baseColorFactorLocation,
+          white[0],
+          white[1],
+          white[2],
+          white[3]);
       }
     }
   };
