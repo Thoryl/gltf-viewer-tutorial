@@ -317,11 +317,10 @@ int ViewerApplication::run()
         glBindTexture(GL_TEXTURE_2D, 0);
         glUniform1i(metallicRoughnessTextureLocation, 1);
         glUniform1f(metallicFactorLocation,
-          (float)pbrMetallicRoughness.metallicFactor);
+          0);
         glUniform1f(roughnessFactorLocation,
-          (float)pbrMetallicRoughness.roughnessFactor);
+          0);
       }
-      glBindTexture(GL_TEXTURE_2D, 0);
     }
   };
 

@@ -52,11 +52,12 @@ void main()
   vec4 baseColorFromTexture = SRGBtoLINEAR(texture(uBaseColorTexture, vTexCoords));
   vec4 baseColor = baseColorFromTexture * uBaseColorFactor;
   vec4 metallicRoughnessFromTexture = texture(uMetallicRoughnessTexture, vTexCoords);
-  vec4 metallicRoughness = metallicRoughnessFromTexture * (uMetallicFactor * uRoughnessFactor);
+  float metallic = uMetallicFactor * metallicRoughnessFromTexture.b;
+  float roughness = uRoughnessFactor * metallicRoughnessFromTexture.g;
 
-  vec3 c_diffuse = mix(baseColor.rgb * (1 - dielectricSpecular.r), black, metallicRoughness.b);
-  vec3 F_O = mix(dielectricSpecular, baseColor.rgb, metallicRoughness.b);
-  float alpha = pow(metallicRoughness.g, 2);
+  vec3 c_diffuse = mix(baseColor.rgb * (1 - dielectricSpecular.r), black, metallic);
+  vec3 F_O = mix(dielectricSpecular, baseColor.rgb, metallic);
+  float alpha = pow(roughness, 2);
 
   float NdotL = clamp(dot(N, L), 0, 1);
   float NdotV = clamp(dot(N, V), 0, 1);
