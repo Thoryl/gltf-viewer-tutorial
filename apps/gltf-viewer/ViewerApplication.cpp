@@ -217,6 +217,11 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uEmissiveTexture");
   const auto emissiveFactorLocation =
       glGetUniformLocation(glslProgram.glId(), "uEmissiveFactor");
+  const auto occlusionTextureLocation =
+      glGetUniformLocation(glslProgram.glId(), "uOcclusionTexture");
+  const auto occlusionStrengthLocation =
+      glGetUniformLocation(glslProgram.glId(), "uOcclusionStrength");
+
 
   tinygltf::Model model;
   if(!loadGltfFile(model)) {
@@ -344,7 +349,23 @@ int ViewerApplication::run()
           0,
           0,
           0);
-      } 
+      }
+      if(material.occlusionTexture.index >= 0) {
+        const auto &texture = model.textures[material.occlusionTexture.index];
+        glActiveTexture(GL_TEXTURE3);
+        assert(texture.source >= 0);
+        glBindTexture(GL_TEXTURE_2D, texObjects[texture.source]);
+        glUniform1i(occlusionTextureLocation, 3);
+        glUniform1f(occlusionStrengthLocation,
+          (float)material.occlusionTexture.strength);
+      }
+      else {
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glUniform1i(occlusionTextureLocation, 3);
+        glUniform1f(occlusionStrengthLocation,
+          0);
+      }  
     }
   };
 
