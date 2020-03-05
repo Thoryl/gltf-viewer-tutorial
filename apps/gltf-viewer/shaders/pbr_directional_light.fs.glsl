@@ -20,6 +20,9 @@ uniform vec3 uEmissiveFactor;
 uniform sampler2D uOcclusionTexture;
 uniform float uOcclusionStrength;
 
+uniform sampler2D uNormalTexture;
+uniform float uNormalScale;
+
 out vec3 fColor;
 
 // Constants
@@ -50,7 +53,10 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 
 void main()
 {
+  vec4 normalFromTexture = texture(uNormalTexture, vTexCoords);
   vec3 N = normalize(vViewSpaceNormal);
+  //vec3 normalScale = normalize((normalFromTexture.xyz * 2.0 - 1.0) * vec3(uNormalScale, uNormalScale, 1.0));
+  //N = N * normalScale;
   vec3 L = uLightDirection;
   vec3 V = normalize(-vViewSpacePosition);
   vec3 H = normalize(L + V);
@@ -80,7 +86,7 @@ void main()
   vec3 F = F_O + (1 - F_O) * shlickFactor;
 
   float alphaPowTwo = alpha * alpha;
-  float denominatorVis = NdotL * sqrt(pow(NdotV, 2) * (1 - alphaPowTwo) + alphaPowTwo) + NdotV * sqrt((NdotL * NdotL) * (1 - alphaPowTwo) + alphaPowTwo);
+  float denominatorVis = NdotL * sqrt((NdotV * NdotV) * (1 - alphaPowTwo) + alphaPowTwo) + NdotV * sqrt((NdotL * NdotL) * (1 - alphaPowTwo) + alphaPowTwo);
   float Vis = 0;
   if(denominatorVis > 0) {
     Vis = 0.5 / denominatorVis;

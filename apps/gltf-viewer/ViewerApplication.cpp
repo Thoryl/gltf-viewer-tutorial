@@ -221,6 +221,10 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uOcclusionTexture");
   const auto occlusionStrengthLocation =
       glGetUniformLocation(glslProgram.glId(), "uOcclusionStrength");
+  const auto normalTextureLocation =
+      glGetUniformLocation(glslProgram.glId(), "uNormalTexture");
+  const auto normalScaleLocation =
+      glGetUniformLocation(glslProgram.glId(), "uNormalScale");
 
 
   tinygltf::Model model;
@@ -366,6 +370,22 @@ int ViewerApplication::run()
         glUniform1f(occlusionStrengthLocation,
           0);
       }  
+      if(material.normalTexture.index >= 0) {
+        const auto &texture = model.textures[material.normalTexture.index];
+        glActiveTexture(GL_TEXTURE4);
+        assert(texture.source >= 0);
+        glBindTexture(GL_TEXTURE_2D, texObjects[texture.source]);
+        glUniform1i(normalTextureLocation, 4);
+        glUniform1f(normalScaleLocation,
+          (float)material.normalTexture.scale);
+      }
+      else {
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glUniform1i(normalTextureLocation, 4);
+        glUniform1f(normalScaleLocation,
+          1);
+      }
     }
   };
 
