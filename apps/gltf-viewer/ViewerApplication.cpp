@@ -213,6 +213,10 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uRoughnessFactor");
   const auto metallicRoughnessTextureLocation =
       glGetUniformLocation(glslProgram.glId(), "uMetallicRoughnessTexture");
+  const auto emissiveTextureLocation =
+      glGetUniformLocation(glslProgram.glId(), "uEmissiveTexture");
+  const auto emissiveFactorLocation =
+      glGetUniformLocation(glslProgram.glId(), "uEmissiveFactor");
 
   tinygltf::Model model;
   if(!loadGltfFile(model)) {
@@ -321,6 +325,26 @@ int ViewerApplication::run()
         glUniform1f(roughnessFactorLocation,
           0);
       }
+      if(material.emissiveTexture.index >= 0) {
+        const auto &texture = model.textures[material.emissiveTexture.index];
+        glActiveTexture(GL_TEXTURE2);
+        assert(texture.source >= 0);
+        glBindTexture(GL_TEXTURE_2D, texObjects[texture.source]);
+        glUniform1i(emissiveTextureLocation, 2);
+        glUniform3f(emissiveFactorLocation,
+          (float)material.emissiveFactor[0],
+          (float)material.emissiveFactor[1],
+          (float)material.emissiveFactor[2]);
+      }
+      else {
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glUniform1i(emissiveTextureLocation, 2);
+        glUniform3f(emissiveFactorLocation,
+          0,
+          0,
+          0);
+      } 
     }
   };
 
@@ -356,7 +380,7 @@ int ViewerApplication::run()
           }
 
           if(node.mesh >= 0){
-            const glm::mat4 modelViewMatrix = modelMatrix * viewMatrix;
+            const glm::mat4 modelViewMatrix = viewMatrix * modelMatrix ;
             const glm::mat4 modelViewProjectionMatrix = projMatrix * modelViewMatrix;
             const glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelViewMatrix));
 

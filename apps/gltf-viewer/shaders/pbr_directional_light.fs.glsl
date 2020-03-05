@@ -14,6 +14,9 @@ uniform float uMetallicFactor;
 uniform float uRoughnessFactor;
 uniform sampler2D uMetallicRoughnessTexture;
 
+uniform sampler2D uEmissiveTexture;
+uniform vec3 uEmissiveFactor;
+
 out vec3 fColor;
 
 // Constants
@@ -54,10 +57,12 @@ void main()
   vec4 metallicRoughnessFromTexture = texture(uMetallicRoughnessTexture, vTexCoords);
   float metallic = uMetallicFactor * metallicRoughnessFromTexture.b;
   float roughness = uRoughnessFactor * metallicRoughnessFromTexture.g;
+  vec4 emissiveFromTexture = texture(uEmissiveTexture, vTexCoords);
+  vec4 emissive = emissiveFromTexture * vec4(uEmissiveFactor, 1);
 
   vec3 c_diffuse = mix(baseColor.rgb * (1 - dielectricSpecular.r), black, metallic);
   vec3 F_O = mix(dielectricSpecular, baseColor.rgb, metallic);
-  float alpha = pow(roughness, 2);
+  float alpha = roughness * roughness;
 
   float NdotL = clamp(dot(N, L), 0, 1);
   float NdotV = clamp(dot(N, V), 0, 1);
@@ -70,14 +75,14 @@ void main()
   shlickFactor *= baseShlickFactor;
   vec3 F = F_O + (1 - F_O) * shlickFactor;
 
-  float alphaPowTwo = pow(alpha, 2);
-  float denominatorVis = NdotL * sqrt(pow(NdotV, 2) * (1 - alphaPowTwo) + alphaPowTwo) + NdotV * sqrt(pow(NdotL, 2) * (1 - alphaPowTwo) + alphaPowTwo);
+  float alphaPowTwo = alpha * alpha;
+  float denominatorVis = NdotL * sqrt(pow(NdotV, 2) * (1 - alphaPowTwo) + alphaPowTwo) + NdotV * sqrt((NdotL * NdotL) * (1 - alphaPowTwo) + alphaPowTwo);
   float Vis = 0;
   if(denominatorVis > 0) {
     Vis = 0.5 / denominatorVis;
   }
 
-  float denominatorD = M_PI * pow(pow(NdotH, 2) * (alphaPowTwo - 1) + 1, 2);
+  float denominatorD = M_PI * (((NdotH * NdotH) * (alphaPowTwo - 1) + 1) * ((NdotH * NdotH) * (alphaPowTwo - 1) + 1));
   float D = 0;
   if(denominatorD > 0) {
     D = alphaPowTwo / denominatorD;
@@ -88,5 +93,5 @@ void main()
   vec3 f_diffuse = (1 - F) * diffuse;
   vec3 f_specular = F * Vis * D;
 
-  fColor = LINEARtoSRGB((f_diffuse + f_specular) * uLightIntensity * NdotL);
+  fColor = LINEARtoSRGB((f_diffuse + f_specular) * uLightIntensity * NdotL) + emissive.xyz;
 }
