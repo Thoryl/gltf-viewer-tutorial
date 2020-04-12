@@ -238,9 +238,9 @@ int ViewerApplication::run()
   const auto occlusionStrengthLocation =
       glGetUniformLocation(glslProgram.glId(), "uOcclusionStrength");
   const auto normalTextureLocation =
-      glGetUniformLocation(glslProgram.glId(), "uNormalTexture");
+      glGetUniformLocation(glslProgram.glId(), "uNormalMapTexture");
   const auto normalScaleLocation =
-      glGetUniformLocation(glslProgram.glId(), "uNormalScale");
+      glGetUniformLocation(glslProgram.glId(), "uNormalMapScale");
 
 
   tinygltf::Model model;
