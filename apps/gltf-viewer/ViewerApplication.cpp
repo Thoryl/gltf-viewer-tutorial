@@ -1,10 +1,8 @@
 #include "ViewerApplication.hpp"
 
 #include <iostream>
-#include <numeric>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/io.hpp>
 
@@ -62,7 +60,8 @@ std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf:
     const GLuint VERTEX_ATTRIB_POSITION_IDX = 0;
     const GLuint VERTEX_ATTRIB_NORMAL_IDX = 1;
     const GLuint VERTEX_ATTRIB_TEXCOORD0_IDX = 2;
-    
+    const GLuint VERTEX_ATTRIB_TANGENT_IDX = 3;
+
     for(int meshIdx = 0; meshIdx < model.meshes.size(); meshIdx++ ) {
         const int vaoOffset = vertexArrayObjects.size();
         const int primitiveSizeRange = model.meshes[meshIdx].primitives.size();
@@ -121,6 +120,23 @@ std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf:
 
               const auto byteOffset = accessor.byteOffset + bufferView.byteOffset;
               glVertexAttribPointer(VERTEX_ATTRIB_TEXCOORD0_IDX, accessor.type, accessor.componentType, GL_FALSE, bufferView.byteStride, (void *)byteOffset);
+            }
+          }
+          {
+            const auto iterator = model.meshes[meshIdx].primitives[primitiveIdx].attributes.find("TANGENT");
+            if (iterator != end(model.meshes[meshIdx].primitives[primitiveIdx].attributes)) {
+              const auto accessorIdx = (*iterator).second;
+              const auto &accessor = model.accessors[accessorIdx];
+              const auto &bufferView = model.bufferViews[accessor.bufferView];
+              const auto bufferIdx = bufferView.buffer;
+
+              const auto bufferObject = bufferObjects[bufferIdx];
+
+              glEnableVertexAttribArray(VERTEX_ATTRIB_TANGENT_IDX);
+              glBindBuffer(GL_ARRAY_BUFFER, bufferObject);
+
+              const auto byteOffset = accessor.byteOffset + bufferView.byteOffset;
+              glVertexAttribPointer(VERTEX_ATTRIB_TANGENT_IDX, accessor.type, accessor.componentType, GL_FALSE, bufferView.byteStride, (void *)byteOffset);
             }
           }
           if(model.meshes[meshIdx].primitives[primitiveIdx].indices >= 0) {
