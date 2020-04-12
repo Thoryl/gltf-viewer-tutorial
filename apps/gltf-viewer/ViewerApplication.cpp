@@ -52,8 +52,8 @@ std::vector<GLuint> ViewerApplication::createBufferObjects( const tinygltf::Mode
     return bufferObjects;
 }
 
-std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf::Model &model, 
-  const std::vector<GLuint> &bufferObjects, 
+std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf::Model &model,
+  const std::vector<GLuint> &bufferObjects,
   std::vector<VaoRange> &meshIndexToVaoRange) {
     std::vector<GLuint> vertexArrayObjects;
 
@@ -76,7 +76,7 @@ std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf:
             if (iterator != end(model.meshes[meshIdx].primitives[primitiveIdx].attributes)) {
               const auto accessorIdx = (*iterator).second;
               const auto &accessor = model.accessors[accessorIdx];
-              const auto &bufferView = model.bufferViews[accessor.bufferView]; 
+              const auto &bufferView = model.bufferViews[accessor.bufferView];
               const auto bufferIdx = bufferView.buffer;
 
               const auto bufferObject = bufferObjects[bufferIdx];
@@ -141,7 +141,7 @@ std::vector<GLuint> ViewerApplication::createVertexArrayObjects( const tinygltf:
           }
           if(model.meshes[meshIdx].primitives[primitiveIdx].indices >= 0) {
             const auto &accessor = model.accessors[model.meshes[meshIdx].primitives[primitiveIdx].indices];
-              const auto &bufferView = model.bufferViews[accessor.bufferView]; 
+              const auto &bufferView = model.bufferViews[accessor.bufferView];
               const auto bufferIdx = bufferView.buffer;
 
               const auto bufferObject = bufferObjects[bufferIdx];
@@ -213,6 +213,8 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uModelViewProjMatrix");
   const auto modelViewMatrixLocation =
       glGetUniformLocation(glslProgram.glId(), "uModelViewMatrix");
+  const auto modelMatrixLocation =
+      glGetUniformLocation(glslProgram.glId(), "uModelMatrix");
   const auto normalMatrixLocation =
       glGetUniformLocation(glslProgram.glId(), "uNormalMatrix");
   const auto lightDirectionLocation =
@@ -248,13 +250,13 @@ int ViewerApplication::run()
     return EXIT_FAILURE;
   };
 
-  
+
   glm::vec3 bboxMin, bboxMax;
   computeSceneBounds(model, bboxMin, bboxMax);
   const glm::vec3 center = (bboxMax + bboxMin) * 0.5f;
   const glm::vec3 diagonalVector = bboxMax - bboxMin;
   const glm::vec3 up(0, 1, 0);
-  const glm::vec3 eye = diagonalVector.z > 0 ? center + diagonalVector : 
+  const glm::vec3 eye = diagonalVector.z > 0 ? center + diagonalVector :
                                               center + 2.f * glm::cross(diagonalVector, up);
   // Build projection matrix
   auto maxDistance = glm::length(diagonalVector);
@@ -289,12 +291,12 @@ int ViewerApplication::run()
 
   std::vector<GLuint> bufferObjects = createBufferObjects(model);
 
-  std::vector<VaoRange> meshIndexToVaoRange; 
+  std::vector<VaoRange> meshIndexToVaoRange;
   std::vector<GLuint> vertexArrayObjects = createVertexArrayObjects(model, bufferObjects, meshIndexToVaoRange);
   //std::cout << vertexArrayObjects.size() << std::endl;
 
   glm::vec3 lightDirection(1.f,1.f,1.f);
-  glm::vec3 lightIntensity(1.f,1.f,1.f); 
+  glm::vec3 lightIntensity(1.f,1.f,1.f);
 
   bool lightFromCamera = false;
 
@@ -385,7 +387,7 @@ int ViewerApplication::run()
         glUniform1i(occlusionTextureLocation, 3);
         glUniform1f(occlusionStrengthLocation,
           0);
-      }  
+      }
       if(material.normalTexture.index >= 0) {
         const auto &texture = model.textures[material.normalTexture.index];
         glActiveTexture(GL_TEXTURE4);
@@ -430,8 +432,8 @@ int ViewerApplication::run()
               const glm::vec3 normalizedLightDirectionViewSpace =
                   glm::normalize(glm::vec3(viewMatrix * glm::vec4(lightDirection, 0.)));
               glUniform3f(lightDirectionLocation,
-                  normalizedLightDirectionViewSpace[0], 
-                  normalizedLightDirectionViewSpace[1], 
+                  normalizedLightDirectionViewSpace[0],
+                  normalizedLightDirectionViewSpace[1],
                   normalizedLightDirectionViewSpace[2]);
             }
           }
@@ -443,6 +445,7 @@ int ViewerApplication::run()
 
             glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, value_ptr(modelViewMatrix));
             glUniformMatrix4fv(modelViewProjMatrixLocation, 1, GL_FALSE, value_ptr(modelViewProjectionMatrix));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, value_ptr(modelMatrix));
             glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, value_ptr(normalMatrix));
 
             const tinygltf::Mesh &mesh = model.meshes[node.mesh];

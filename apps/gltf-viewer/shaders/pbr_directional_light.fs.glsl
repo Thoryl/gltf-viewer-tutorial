@@ -3,6 +3,8 @@
 in vec3 vViewSpacePosition;
 in vec3 vViewSpaceNormal;
 in vec2 vTexCoords;
+in vec3 vViewSpaceTangent;
+in vec3 vViewSpaceBitangent;
 
 uniform vec3 uLightDirection;
 uniform vec3 uLightIntensity;
@@ -53,8 +55,10 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 
 void main()
 {
+
+    mat3 TBN = mat3(vViewSpaceTangent, vViewSpaceBitangent, vViewSpaceNormal);
     vec4 normalFromNormalMap = texture(uNormalMapTexture, vTexCoords);
-    vec3 N = normalize(((2.0f * normalFromNormalMap.rgb - 1.0f) * vec3(uNormalMapScale, uNormalMapScale, 1.0f)));
+    vec3 N = TBN * normalize(((2.0f * normalFromNormalMap.rgb - 1.0f) * vec3(uNormalMapScale, uNormalMapScale, 1.0f)));
     //vec3 N = normalize(vViewSpaceNormal);
     //vec3 normalScale = normalize((normalFromTexture.xyz * 2.0 - 1.0) * vec3(uNormalScale, uNormalScale, 1.0));
     //N = N * normalScale;
