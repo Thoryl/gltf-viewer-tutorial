@@ -243,6 +243,10 @@ int ViewerApplication::run()
       glGetUniformLocation(glslProgram.glId(), "uNormalMapTexture");
   const auto normalScaleLocation =
       glGetUniformLocation(glslProgram.glId(), "uNormalMapScale");
+  const auto uHasTangent =
+      glGetUniformLocation(glslProgram.glId(), "uHasTangent");
+  const auto uHasNormalMap =
+      glGetUniformLocation(glslProgram.glId(), "uHasNormalMap");
 
 
   tinygltf::Model model;
@@ -396,6 +400,9 @@ int ViewerApplication::run()
         glUniform1i(normalTextureLocation, 4);
         glUniform1f(normalScaleLocation,
           (float)material.normalTexture.scale);
+        glUniform1i(uHasNormalMap, 1);
+        std::cout << "Normal map" << std::endl;
+
       }
       else {
         glActiveTexture(GL_TEXTURE4);
@@ -403,6 +410,8 @@ int ViewerApplication::run()
         glUniform1i(normalTextureLocation, 4);
         glUniform1f(normalScaleLocation,
           1);
+        glUniform1i(uHasNormalMap, 0);
+        std::cout << "No normal map" << std::endl;
       }
     }
   };
