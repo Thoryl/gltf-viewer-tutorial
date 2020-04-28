@@ -401,7 +401,6 @@ int ViewerApplication::run()
         glUniform1f(normalScaleLocation,
           (float)material.normalTexture.scale);
         glUniform1i(uHasNormalMap, 1);
-        std::cout << "Normal map" << std::endl;
 
       }
       else {
@@ -411,7 +410,6 @@ int ViewerApplication::run()
         glUniform1f(normalScaleLocation,
           1);
         glUniform1i(uHasNormalMap, 0);
-        std::cout << "No normal map" << std::endl;
       }
     }
   };
